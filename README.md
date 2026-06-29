@@ -1,93 +1,157 @@
-# Delulubot
+<div align="center">
+
+<img src="https://img.shields.io/badge/Version-4.0_(Multi--Provider)-FF6B35?style=for-the-badge&logo=groq&logoColor=white" alt="Version Badge"/>
+<img src="https://img.shields.io/badge/Platform-Telegram-26A5E4?style=for-the-badge&logo=telegram&logoColor=white" alt="Telegram Badge"/>
+<img src="https://img.shields.io/badge/Language-Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python Badge"/>
 
 
+<h1 align="center">🤖 Delulubot</h1>
+<h3 align="center">Your Sassy Manglish AI Companion on Telegram</h3>
 
-## Getting started
+<p align="center">
+  100% free-tier conversational AI bot — Groq (primary chat) + Jina (embeddings) + Gemini (fallback). Featuring RAG-based personality grounding, voice interactions, and persistent long-term memory.
+</p>
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+<p align="center">
+  <a href="#-features">Features</a> •
+  <a href="#-tech-stack">Tech Stack</a> •
+  <a href="#-installation">Installation</a> •
+  <a href="#-configuration">Configuration</a> •
+  <a href="#-deployment">Deployment</a> •
+  <a href="#-license">License</a>
+</p>
+</div>
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+---
 
-## Add your files
+## 🌟 Overview
 
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+**Delulubot v4.0** is not just another chatbot; it is a digital persona. Designed to mimic "Delulu," a 23-year-old sassy girl, the bot communicates in **Manglish (Malayalam + English)** for a realistic, human-like texting experience.
+
+Built on a **multi-provider free-tier architecture**, it uses **Groq** (via OpenAI-compatible API) as the primary chat provider, **Jina AI** for text embeddings (RAG), and **Google Gemini** as a fallback chat provider. This ensures 100% free operation without requiring any credit card.
+
+## ✨ Features
+
+| Feature | Description |
+| :--- | :--- |
+| 🧠 **RAG Architecture** | Grounds the bot in custom knowledge bases (Markdown/TXT/JSON) using Jina AI embeddings, ensuring accurate lore and personality consistency. |
+| 🗣️ **Voice Interaction** | **STT:** High-speed transcription via `faster-whisper`.<br>**TTS:** Premium neural voices via `edge-tts` (or fallback to `gTTS`). |
+| 🧘 **Persistent Memory** | Remembers user preferences, facts, and conversation history (`user_memories.json`) for personalized interactions. |
+| 🛡️ **Personality Guard** | Advanced system prompts prevent character breaks, ensuring Delulu never leaves her persona. |
+| ⚡ **Multi-Provider Fallbacks** | Groq (primary) → Gemini (fallback) — seamless failover with Jina embedding key rotation across multiple API keys. |
+
+## 🛠️ Tech Stack
+
+-   **Core Logic:** Python 3.9+
+-   **Primary Chat:** Groq (llama-3.3-70b-versatile) via OpenAI-compatible SDK
+-   **Embeddings:** Jina AI (jina-embeddings-v3) with round-robin key rotation
+-   **Fallback Chat:** Google Gemini (gemini-2.0-flash-lite)
+-   **Bot Framework:** `python-telegram-bot`
+-   **Voice Processing:** `faster-whisper`, `edge-tts`, `gTTS`
+-   **Environment Management:** `python-dotenv`
+-   **Health Monitoring:** UptimeRobot + built-in HTTP healthcheck endpoint
+
+## 🚀 Installation
+
+Follow these steps to get Delulubot running locally.
+
+### Prerequisites
+- Python 3.9 or higher
+- A Telegram Bot Token (from [@BotFather](https://t.me/botfather))
+- A Groq API Key (from [Groq Console](https://console.groq.com))
+- A Jina AI API Key (from [Jina AI](https://jina.ai/)) — 3 keys recommended for rotation
+- (Optional) A Google AI Studio API Key for fallback (from [Google AI Studio](https://aistudio.google.com/))
+
+### Step 1: Clone the Repository
+```bash
+git clone https://github.com/yourusername/delulubot.git
+cd delulubot
+```
+
+### Step 2: Create a Virtual Environment
+```bash
+python -m venv venv
+# On Windows:
+venv\Scripts\activate
+# On Linux/macOS:
+source venv/bin/activate
+```
+
+### Step 3: Install Dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### Step 4: Configuration
+Create a `.env` file in the root directory based on the `.env.example`.
+
+## ⚙️ Configuration
+
+Environment variables are crucial for the bot's operation. Create a `.env` file with the following keys:
+
+```env
+# Telegram Configuration
+TELEGRAM_TOKEN=your_telegram_bot_token_here
+
+# Groq (primary chat provider - free tier, no credit card)
+GROQ_API_KEY=your_groq_api_key_here
+GROQ_MODEL=llama-3.3-70b-versatile
+
+# Gemini (fallback chat - only used when Groq is down/rate-limited)
+GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_MODEL=gemini-2.0-flash-lite
+
+# Jina (embeddings for RAG - add multiple keys comma-separated for rotation)
+JINA_API_KEYS=key1,key2,key3
+JINA_MODEL=jina-embeddings-v3
+
+# RAG & Personality
+RAG_ENABLED=true
+RAG_DIR=rag_data
+CHARACTER_BIBLE_FILE=rag_data/delulu_character_bible.md
+
+# Voice Settings
+VOICE_TTS_ENGINE=auto
+VOICE_TRANSCRIBE_MODEL=base
+```
+
+## 🏃 Usage
+
+Once configured, start the bot with:
+
+```bash
+python delulu_bot.py
+```
+
+Interact with the bot on Telegram:
+- **Text:** Send a message to receive a Manglish reply.
+- **Voice:** Send a voice note; Delulu will transcribe it and reply with voice/audio.
+- **Commands:** Use `/start`, `/aboutme`, `/companion`, `/status`, etc.
+
+## 🚢 Deployment
+
+Delulubot is designed to run on **Render's free plan** (512 MB RAM). The bot automatically starts a healthcheck HTTP server on the `$PORT` environment variable. Use **UptimeRobot** to ping the healthcheck endpoint every 5 minutes to prevent the free tier from sleeping.
+
+## 📁 Project Structure
 
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/anniva-group/delulubot.git
-git branch -M main
-git push -uf origin main
+delulubot/
+├── rag_data/                # Knowledge base & Character lore
+├── .env                     # Environment variables (Not committed)
+├── .env.example             # Template for configuration
+├── delulu_bot.py            # Main application script
+├── requirements.txt         # Python dependencies
+├── user_memories.json       # Persistent user data
+└── README.md                # Documentation
 ```
 
-## Integrate with your tools
+## 🤝 Contributing
 
-* [Set up project integrations](https://gitlab.com/anniva-group/delulubot/-/settings/integrations)
+Contributions are welcome! Whether it's adding new features, improving the personality prompts, or fixing bugs, please feel free to fork the repo and submit a pull request.
 
-## Collaborate with your team
 
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+---
 
-## Test and Deploy
-
-Use the built-in continuous integration in GitLab.
-
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
-
-***
-
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+<div align="center">
+  Made with ❤️ and a touch of Delulu ✨
+</div>
