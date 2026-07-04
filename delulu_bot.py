@@ -2274,6 +2274,7 @@ _Ghost life._
 /voicelang - Voice language
 /emoji - Emoji frequency
 /settings - See your settings
+/ping - Test if I'm alive
 /random - Random Delulu thought
 /status - Check if Delulu is awake
 /ragstatus - Check RAG index
@@ -2534,6 +2535,14 @@ async def emoji_command(
     )
 
 
+async def ping_command(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+):
+    """Simple ping - tests if bot can respond without any AI."""
+    await update.message.reply_text("pong")
+    logger.info("ping_command: pong sent")
+
+
 def user_requested_voice_reply(message: str) -> bool:
     """Heuristic check for explicit voice-reply requests in text."""
     text = (message or "").strip().lower()
@@ -2555,65 +2564,57 @@ async def handle_message(
     """Handle all text messages."""
     user_id = str(update.effective_user.id)
     user_message = update.message.text
-    song_requested = is_song_request(user_message)
-    voice_requested = user_requested_voice_reply(user_message) or (
-        song_requested and AUTO_VOICE_ON_SONG_REQUEST
-    )
-    memory = get_user_memory(user_id)
-
-    if not user_message or not user_message.strip():
-        return
-
-    # Typing indicator
-    await context.bot.send_chat_action(
-        chat_id=update.effective_chat.id,
-        action="typing",
-    )
-
-    response = await get_delulu_response(
-        user_id, user_message
-    )
-
-    # If user explicitly asks for voice in a text message, return voice too.
-    if voice_requested and VOICE_OUTPUT_ENABLED and get_tts_engine() != "none":
-        temp_dir = Path(
-            tempfile.mkdtemp(prefix="delulu_text_voice_")
+    logger.info(f"handle_message called by {user_id}: {user_message[:50]}...")
+    try:
+        song_requested = is_song_request(user_message)
+        voice_requested = user_requested_voice_reply(user_message) or (
+            song_requested and AUTO_VOICE_ON_SONG_REQUEST
         )
-        out_path = temp_dir / "reply.mp3"
-        voice_style = pick_tts_voice(memory, user_message)
-        voice_lang = resolve_voice_lang(memory, response, user_message)
-        try:
-            await synthesize_tts_mp3(
-                response,
-                str(out_path),
-                voice_style=voice_style,
-                lang=voice_lang,
-            )
-            with open(out_path, "rb") as vf:
-                await update.message.reply_voice(
-                    voice=vf
-                )
-            if VOICE_REPLY_WITH_TEXT:
-                await update.message.reply_text(response)
+        memory = get_user_memory(user_id)
+
+        if not user_message or not user_message.strip():
             return
-        except Exception as e:
-            logger.error(f"Text->voice reply error: {e}")
-            # Fall back to text below.
-        finally:
-            shutil.rmtree(temp_dir, ignore_errors=True)
 
-    # Send one reply per user message.
-    # Telegram hard limit is 4096 chars, so only chunk if required.
-    if len(response) <= 4096:
-        await update.message.reply_text(response)
-        return
+        await context.bot.send_chat_action(
+            chat_id=update.effective_chat.id,
+            action="typing",
+        )
 
-    # Fallback chunking for unusually long outputs.
-    start = 0
-    while start < len(response):
-        chunk = response[start:start + 4096]
-        await update.message.reply_text(chunk)
-        start += 4096
+        response = await get_delulu_response(user_id, user_message)
+        logger.info(f"handle_message: got {len(response)} char response")
+
+        if voice_requested and VOICE_OUTPUT_ENABLED and get_tts_engine() != "none":
+            temp_dir = Path(tempfile.mkdtemp(prefix="delulu_text_voice_"))
+            out_path = temp_dir / "reply.mp3"
+            voice_style = pick_tts_voice(memory, user_message)
+            voice_lang = resolve_voice_lang(memory, response, user_message)
+            try:
+                await synthesize_tts_mp3(response, str(out_path), voice_style=voice_style, lang=voice_lang)
+                with open(out_path, "rb") as vf:
+                    await update.message.reply_voice(voice=vf)
+                if VOICE_REPLY_WITH_TEXT:
+                    await update.message.reply_text(response)
+                return
+            except Exception as e:
+                logger.error(f"Text->voice reply error: {e}")
+            finally:
+                shutil.rmtree(temp_dir, ignore_errors=True)
+
+        if len(response) <= 4096:
+            await update.message.reply_text(response)
+        else:
+            start = 0
+            while start < len(response):
+                await update.message.reply_text(response[start:start + 4096])
+                start += 4096
+    except Exception as e:
+        logger.error(f"handle_message error: {e}", exc_info=True)
+        try:
+            await update.message.reply_text(
+                "Ayyoo... ente ghost powers glitch aayi! Try again."
+            )
+        except Exception:
+            pass
 
 
 async def ask_delulu(
@@ -3626,6 +3627,7 @@ def _run_bot():
     app.add_handler(CommandHandler("voicelang", voicelang_command))
     app.add_handler(CommandHandler("emoji", emoji_command))
     app.add_handler(CommandHandler("settings", settings_command))
+    app.add_handler(CommandHandler("ping", ping_command))
 
     # Message handlers
     app.add_handler(
