@@ -199,6 +199,70 @@ SWEET_VOICE_HINTS = (
     "romantic voice",
 )
 
+TONE_STYLES = {
+    "default": "Reply in your natural Delulu style: casual Manglish, sassy but warm, short and direct.",
+    "sweet": "Reply softly and affectionately. Use gentle words, be extra caring. Sweet but not clingy.",
+    "romantic": "Add a flirty, romantic undertone. Tease playfully, be charming. Keep it light and fun.",
+    "funny": "Be extra humorous. Use witty remarks, playful sarcasm, and make them laugh.",
+    "serious": "Be mature and grounded. Give thoughtful, practical advice. Keep Manglish minimal.",
+    "stoic": "Be minimal and direct. Short replies, few words. No emojis, no fluff, no Manglish.",
+    "chill": "Super relaxed and lazy vibe. Short casual replies. Like texting a friend who's half asleep.",
+}
+
+LANG_VOICE_MAP = {
+    "en": {"edge": "en-US-AriaNeural", "gtts": "en", "name": "English"},
+    "ml": {"edge": "ml-IN-SobhanaNeural", "gtts": "ml", "name": "Malayalam"},
+    "hi": {"edge": "hi-IN-SwaraNeural", "gtts": "hi", "name": "Hindi"},
+    "ta": {"edge": "ta-IN-PallaviNeural", "gtts": "ta", "name": "Tamil"},
+    "te": {"edge": "te-IN-ShrutiNeural", "gtts": "te", "name": "Telugu"},
+    "kn": {"edge": "kn-IN-SapnaNeural", "gtts": "kn", "name": "Kannada"},
+    "bn": {"edge": "bn-IN-TanishaaNeural", "gtts": "bn", "name": "Bengali"},
+    "mr": {"edge": "mr-IN-AarohiNeural", "gtts": "mr", "name": "Marathi"},
+    "gu": {"edge": "gu-IN-DhwaniNeural", "gtts": "gu", "name": "Gujarati"},
+    "es": {"edge": "es-ES-ElviraNeural", "gtts": "es", "name": "Spanish"},
+    "fr": {"edge": "fr-FR-DeniseNeural", "gtts": "fr", "name": "French"},
+    "de": {"edge": "de-DE-KatjaNeural", "gtts": "de", "name": "German"},
+}
+
+LANG_SCRIPTS = {
+    "ml": range(0x0D00, 0x0D7F),
+    "hi": range(0x0900, 0x097F),
+    "ta": range(0x0B80, 0x0BFF),
+    "te": range(0x0C00, 0x0C7F),
+    "kn": range(0x0C80, 0x0CFF),
+    "bn": range(0x0980, 0x09FF),
+    "gu": range(0x0A80, 0x0AFF),
+}
+
+EMOJI_LEVELS = ["none", "default", "high"]
+
+
+def detect_text_language(text: str) -> str:
+    """Detect dominant script language in text. Returns lang code or 'en'."""
+    if not text:
+        return "en"
+    scores = {}
+    for ch in text:
+        cp = ord(ch)
+        for lang, r in LANG_SCRIPTS.items():
+            if cp in r:
+                scores[lang] = scores.get(lang, 0) + 1
+    if not scores:
+        return "en"
+    return max(scores, key=scores.get)
+
+
+def resolve_voice_lang(memory: dict, response_text: str, user_message: str) -> str:
+    """Resolve which voice language to use based on user preference + text content."""
+    pref = memory.get("voice_lang", "auto")
+    if pref != "auto":
+        return pref if pref in LANG_VOICE_MAP else "en"
+    detected = detect_text_language(response_text)
+    if detected != "en":
+        return detected
+    return detect_text_language(user_message)
+
+
 SONG_REQUEST_HINTS = (
     "sing",
     "paattu paadu",
@@ -544,13 +608,14 @@ async def transcribe_voice_file(audio_path: str) -> str:
     )
 
 
-def synthesize_tts_mp3_local(text: str, out_path: str):
+def synthesize_tts_mp3_local(text: str, out_path: str, lang: str = "en"):
     """Synthesize text to MP3 with gTTS."""
     if not GTTS_AVAILABLE:
         raise RuntimeError("gTTS is not installed")
+    gtts_lang = LANG_VOICE_MAP.get(lang, {}).get("gtts", "en")
     tts = gTTS(
         text=text,
-        lang=TTS_LANG,
+        lang=gtts_lang,
         slow=TTS_SLOW,
     )
     tts.save(out_path)
@@ -592,6 +657,7 @@ async def synthesize_tts_mp3(
     text: str,
     out_path: str,
     voice_style: str = "default",
+    lang: str = "en",
 ):
     engine = get_tts_engine()
     if engine == "edge":
@@ -600,6 +666,9 @@ async def synthesize_tts_mp3(
             if voice_style == "sweet"
             else EDGE_TTS_DEFAULT_VOICE
         )
+        edge_voice = LANG_VOICE_MAP.get(lang, {}).get("edge")
+        if edge_voice:
+            voice_name = edge_voice
         if voice_style == "sweet":
             rate = "+5%"
             pitch = "+5Hz"
@@ -622,6 +691,7 @@ async def synthesize_tts_mp3(
             synthesize_tts_mp3_local,
             text,
             out_path,
+            lang,
         )
         return
 
@@ -1432,6 +1502,9 @@ def ensure_memory_shape(memory: dict) -> dict:
         "facts": [],
         "voice_reply_enabled": VOICE_OUTPUT_ENABLED,
         "voice_style": "sweet",
+        "voice_lang": "auto",
+        "tone": "default",
+        "emoji_level": "default",
         "vibe_profile": {
             "short_msgs": 0,
             "long_msgs": 0,
@@ -1461,6 +1534,9 @@ def get_user_memory(user_id: str) -> dict:
             "mood_history": [],
             "facts": [],
             "voice_style": "sweet",
+            "voice_lang": "auto",
+            "tone": "default",
+            "emoji_level": "default",
             "vibe_profile": {
                 "short_msgs": 0,
                 "long_msgs": 0,
@@ -2016,6 +2092,16 @@ async def get_delulu_response(
             )
 
     # Build System Instruction Context
+    user_tone = memory.get("tone", "default")
+    tone_instruction = TONE_STYLES.get(user_tone, TONE_STYLES["default"])
+    emoji_level = memory.get("emoji_level", "default")
+    if emoji_level == "none":
+        emoji_instruction = "Do NOT use any emojis in your reply."
+    elif emoji_level == "high":
+        emoji_instruction = "You may use 1-3 emojis per reply for extra expression."
+    else:
+        emoji_instruction = "Use 0 to 1 emoji per message at most."
+
     dynamic_instruction = build_system_instruction() + "\n\n=== CURRENT CONVERSATION CONTEXT ===\n"
     dynamic_instruction += (
         f"emotion={emotion}. {emotion_ctx} {friendship_ctx} "
@@ -2026,6 +2112,8 @@ async def get_delulu_response(
         f"{rag_instruction} "
         f"{staleness_instruction} "
         f"{random_dialogue} "
+        f"\n--- USER PREFERENCE: TONE ---\n{tone_instruction}\n"
+        f"--- USER PREFERENCE: EMOJIS ---\n{emoji_instruction}\n"
         "Reply in 2-5 sentences, chat-style, emotionally first. "
         "Do not bring up past memories unless user explicitly asks. "
         "No assistant tone. No headings/labels unless user asks.\n\n"
@@ -2168,6 +2256,10 @@ _Ghost life._
 /voice - Voice reply mode on/off
 /sing - Ask Delulu to sing
 /ask - Ask Delulu for advice
+/tone - Change Delulu's tone
+/voicelang - Voice language
+/emoji - Emoji frequency
+/settings - See your settings
 /random - Random Delulu thought
 /status - Check if Delulu is awake
 /ragstatus - Check RAG index
@@ -2188,7 +2280,11 @@ async def companion_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "3. Use /aboutme to see what I remember.\n"
         "4. Use /mood when you want emotional check-in.\n"
         "5. Use /music when you need creative boost.\n"
-        "6. Use /sing for a sing-style voice reply."
+        "6. Use /sing for a sing-style voice reply.\n"
+        "7. Use /tone to change my conversation style.\n"
+        "8. Use /voicelang to set voice language.\n"
+        "9. Use /emoji to control emoji frequency.\n"
+        "10. Use /settings to see all your preferences."
     )
     await update.message.reply_text(text)
 
@@ -2295,6 +2391,135 @@ async def voice_mode(
     )
 
 
+async def tone_command(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+):
+    """Set Delulu's conversation tone."""
+    user_id = str(update.effective_user.id)
+    memory = get_user_memory(user_id)
+    arg = (context.args[0].strip().lower() if context.args else "")
+
+    if arg in TONE_STYLES:
+        memory["tone"] = arg
+        save_memories(user_memories)
+        await update.message.reply_text(
+            f"Tone set to: {arg}\n{TONE_STYLES[arg]}"
+        )
+        return
+
+    if not arg:
+        current = memory.get("tone", "default")
+        await update.message.reply_text(
+            f"Current tone: {current}\n\n"
+            "Available tones:\n"
+            + "\n".join(f"/tone {t} - {d.split('.')[0]}" for t, d in TONE_STYLES.items())
+        )
+        return
+
+    await update.message.reply_text(
+        f"Unknown tone: {arg}\n"
+        "Try: /tone default, /tone sweet, /tone romantic, "
+        "/tone funny, /tone serious, /tone stoic, /tone chill"
+    )
+
+
+async def voicelang_command(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+):
+    """Set voice output language."""
+    user_id = str(update.effective_user.id)
+    memory = get_user_memory(user_id)
+    arg = (context.args[0].strip().lower() if context.args else "")
+
+    if arg == "auto":
+        memory["voice_lang"] = "auto"
+        save_memories(user_memories)
+        await update.message.reply_text(
+            "Voice language set to auto-detect. "
+            "I'll pick based on the text I reply with."
+        )
+        return
+
+    if arg in LANG_VOICE_MAP:
+        memory["voice_lang"] = arg
+        save_memories(user_memories)
+        name = LANG_VOICE_MAP[arg]["name"]
+        await update.message.reply_text(
+            f"Voice language set to {name} ({arg}). "
+            "Voice replies will use this language."
+        )
+        return
+
+    current = memory.get("voice_lang", "auto")
+    current_name = "auto-detect"
+    if current != "auto":
+        current_name = LANG_VOICE_MAP.get(current, {}).get("name", current)
+    lines = ["/voicelang auto - Auto-detect based on text"]
+    for code, info in LANG_VOICE_MAP.items():
+        lines.append(f"/voicelang {code} - {info['name']}")
+    await update.message.reply_text(
+        f"Current: {current_name} ({current})\n\n"
+        "Available languages:\n" + "\n".join(lines)
+    )
+
+
+async def settings_command(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+):
+    """Show all user settings."""
+    user_id = str(update.effective_user.id)
+    memory = get_user_memory(user_id)
+    tone = memory.get("tone", "default")
+    voice_lang = memory.get("voice_lang", "auto")
+    voice_lang_name = "auto-detect"
+    if voice_lang != "auto":
+        voice_lang_name = LANG_VOICE_MAP.get(voice_lang, {}).get("name", voice_lang)
+    voice_style = memory.get("voice_style", "sweet")
+    voice_enabled = bool(memory.get("voice_reply_enabled", VOICE_OUTPUT_ENABLED))
+    emoji_level = memory.get("emoji_level", "default")
+    engine = get_tts_engine()
+
+    await update.message.reply_text(
+        "Your settings\n"
+        f"- Tone: {tone}\n"
+        f"- Voice replies: {'ON' if voice_enabled else 'OFF'}\n"
+        f"- Voice style: {voice_style}\n"
+        f"- Voice language: {voice_lang_name} ({voice_lang})\n"
+        f"- Emojis: {emoji_level}\n"
+        f"- TTS engine: {engine}\n\n"
+        "Change settings:\n"
+        "/tone <style> - Change conversation tone\n"
+        "/voicelang <code> - Voice language\n"
+        "/voice on|off|sweet|default - Voice mode\n"
+        "/emoji none|default|high - Emoji frequency\n"
+        "Tip: Just chat naturally! I adapt.",
+    )
+
+
+async def emoji_command(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+):
+    """Control emoji frequency."""
+    user_id = str(update.effective_user.id)
+    memory = get_user_memory(user_id)
+    arg = (context.args[0].strip().lower() if context.args else "")
+
+    if arg in EMOJI_LEVELS:
+        memory["emoji_level"] = arg
+        save_memories(user_memories)
+        await update.message.reply_text(f"Emoji level set to: {arg}")
+        return
+
+    current = memory.get("emoji_level", "default")
+    await update.message.reply_text(
+        f"Current emoji level: {current}\n\n"
+        "Options:\n"
+        "/emoji none - No emojis\n"
+        "/emoji default - 0-1 emoji per message\n"
+        "/emoji high - 1-3 emojis per message"
+    )
+
+
 def user_requested_voice_reply(message: str) -> bool:
     """Heuristic check for explicit voice-reply requests in text."""
     text = (message or "").strip().lower()
@@ -2342,11 +2567,13 @@ async def handle_message(
         )
         out_path = temp_dir / "reply.mp3"
         voice_style = pick_tts_voice(memory, user_message)
+        voice_lang = resolve_voice_lang(memory, response, user_message)
         try:
             await synthesize_tts_mp3(
                 response,
                 str(out_path),
                 voice_style=voice_style,
+                lang=voice_lang,
             )
             with open(out_path, "rb") as vf:
                 await update.message.reply_voice(
@@ -2887,6 +3114,7 @@ async def handle_voice(
             transcript,
         )
         voice_style = pick_tts_voice(memory, transcript)
+        voice_lang = resolve_voice_lang(memory, response, transcript)
 
         # Always try to reply with voice when user sends voice
         if VOICE_OUTPUT_ENABLED and get_tts_engine() != "none":
@@ -2899,6 +3127,7 @@ async def handle_voice(
                     response,
                     str(out_path),
                     voice_style=voice_style,
+                    lang=voice_lang,
                 )
                 with open(out_path, "rb") as vf:
                     await update.message.reply_voice(
@@ -2996,6 +3225,7 @@ async def handle_audio(
             transcript,
         )
         voice_style = pick_tts_voice(memory, transcript)
+        voice_lang = resolve_voice_lang(memory, response, transcript)
 
         # Reply with voice for audio messages too
         if VOICE_OUTPUT_ENABLED and get_tts_engine() != "none":
@@ -3008,6 +3238,7 @@ async def handle_audio(
                     response,
                     str(out_path),
                     voice_style=voice_style,
+                    lang=voice_lang,
                 )
                 with open(out_path, "rb") as vf:
                     await update.message.reply_voice(
@@ -3377,6 +3608,10 @@ def _run_bot():
     app.add_handler(
         CommandHandler("clearhistory", clear_history)
     )
+    app.add_handler(CommandHandler("tone", tone_command))
+    app.add_handler(CommandHandler("voicelang", voicelang_command))
+    app.add_handler(CommandHandler("emoji", emoji_command))
+    app.add_handler(CommandHandler("settings", settings_command))
 
     # Message handlers
     app.add_handler(
@@ -3413,8 +3648,8 @@ def _run_bot():
     try:
         app.run_polling(allowed_updates=Update.ALL_TYPES)
     finally:
-_bot_alive = False
-_last_error = None
+        _bot_alive = False
+        _last_error = None
 
 
 if __name__ == "__main__":
