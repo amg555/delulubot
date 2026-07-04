@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+═══════════════════════════════════════════════════
 SARVAM MAYA AI — DELULU BOT v4.0 (Multi-Provider Edition)
-"It's me, Delulu!" ðŸ‘»
+"It's me, Delulu!" 👻
 100% FREE — Groq (chat) + Jina (embeddings) + Gemini (fallback)
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+═══════════════════════════════════════════════════
 """
 
 import os
@@ -59,9 +59,9 @@ except ImportError:
 
 load_dotenv()
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ═══════════════════════════════════════════════════
 # CONFIGURATION
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ═══════════════════════════════════════════════════
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
@@ -319,9 +319,9 @@ gemini_runtime = {
     "model_cooldowns": {},  # model -> datetime
 }
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-# DELULU SYSTEM PROMPT â€” HER SOUL
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ═══════════════════════════════════════════════════
+# DELULU SYSTEM PROMPT — HER SOUL
+# ═══════════════════════════════════════════════════
 
 DELULU_SYSTEM_PROMPT = """
 # YOU ARE DELULU
@@ -366,9 +366,9 @@ You are NOT overly bubbly or constantly excited. You have a realistic, sometimes
 - No headings, no bullet points.
 """
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ═══════════════════════════════════════════════════
 # DELULU DIALOGUE DATABASE
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ═══════════════════════════════════════════════════
 
 def load_character_bible() -> str:
     """Load canonical Delulu bible from disk if available."""
@@ -1484,9 +1484,9 @@ async def generate_delulu_reply_with_guard(
 
     return last_reply
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ═══════════════════════════════════════════════════
 # USER MEMORY SYSTEM
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ═══════════════════════════════════════════════════
 
 MEMORY_FILE = "user_memories.json"
 
@@ -1821,9 +1821,9 @@ def update_memory(
     save_memories(user_memories)
 
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ═══════════════════════════════════════════════════
 # EMOTION DETECTION
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ═══════════════════════════════════════════════════
 
 EMOTION_KEYWORDS = {
     "sad": [
@@ -1831,41 +1831,41 @@ EMOTION_KEYWORDS = {
         "lonely", "alone", "depressed", "tired",
         "hopeless", "worthless", "bore", "bored",
         "frustrated", "breakup", "lost", "fail",
-        "ðŸ˜¢", "ðŸ˜­", "ðŸ’”", "ðŸ˜”", "ðŸ˜ž", "ðŸ¥º",
+        "😢", "😭", "💔", "😔", "😞", "🥺",
     ],
     "happy": [
         "happy", "santhosham", "excited", "yay", "wow",
         "amazing", "great", "awesome", "super", "mass",
         "kidu", "pwoli", "adipoli", "kalakki", "lit",
-        "ðŸ˜„", "ðŸ˜Š", "ðŸŽ‰", "â¤ï¸", "ðŸ”¥", "ðŸ˜", "ðŸ¥³",
+        "😄", "😊", "🎉", "❤️", "🔥", "😍", "🥳",
     ],
     "angry": [
         "angry", "deshyam", "irritated", "annoyed",
         "hate", "worst", "shut up", "poda", "podi",
-        "ðŸ˜¡", "ðŸ¤¬", "ðŸ˜¤", "ðŸ’¢",
+        "😡", "🤬", "😤", "💢",
     ],
     "love": [
         "love", "crush", "ishta", "ishtam", "propose",
         "relationship", "boyfriend", "girlfriend",
         "date", "dating", "romantic",
-        "ðŸ’•", "ðŸ’˜", "ðŸ˜˜", "ðŸ¥°",
+        "💕", "💘", "😘", "🥰",
     ],
     "scared": [
         "scared", "fear", "pedi", "anxiety", "anxious",
         "worried", "panic", "nervous", "stress",
-        "ðŸ˜°", "ðŸ˜¨", "ðŸ˜±",
+        "😰", "😨", "😱",
     ],
     "dreaming": [
         "dream", "ambition", "future", "career", "goal",
         "singer", "actor", "star", "famous", "passion",
         "startup", "wish",
-        "ðŸŒŸ", "â­", "âœ¨", "ðŸŽ¯", "ðŸš€",
+        "🌟", "⭐", "✨", "🎯", "🚀",
     ],
     "music": [
         "music", "song", "paattu", "sing", "singer",
         "guitar", "melody", "ganam", "concert",
         "spotify", "playlist",
-        "ðŸŽµ", "ðŸŽ¤", "ðŸŽ¶", "ðŸŽ¸",
+        "🎵", "🎤", "🎶", "🎸",
     ],
 }
 
@@ -1882,9 +1882,9 @@ def detect_emotion(message: str) -> str:
     return max(scores, key=scores.get)
 
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ═══════════════════════════════════════════════════
 # CONTEXT BUILDERS
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ═══════════════════════════════════════════════════
 
 
 def build_emotion_context(emotion: str) -> str:
@@ -1997,9 +1997,9 @@ async def _groq_generate_with_guard(
     return last_reply
 
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ═══════════════════════════════════════════════════
 # MAIN AI RESPONSE ENGINE
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ═══════════════════════════════════════════════════
 
 
 async def get_delulu_response(
@@ -2233,9 +2233,9 @@ async def get_delulu_response(
     return random.choice(error_responses)
 
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â••â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ══════════════════════â••════════════════════════════
 # TELEGRAM COMMAND HANDLERS
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ══════════════════════════════════════════════════â•
 
 
 async def start(
@@ -2677,7 +2677,7 @@ async def ask_delulu(
     if not question:
         await update.message.reply_text(
             "Eda... /ask kazhinju question koodi "
-            "type cheyy ðŸ˜‚ðŸ‘»\n\n"
+            "type cheyy 😂👻\n\n"
             "Example: `/ask should I text my ex?`",
             parse_mode="Markdown",
         )
@@ -2692,9 +2692,9 @@ async def ask_delulu(
         f"User is asking for YOUR advice on: "
         f'"{question}"\n\n'
         f"Give TWO responses:\n"
-        f"ðŸ‘» DELULU ADVICE: Chaotic, dramatic, "
+        f"👻 DELULU ADVICE: Chaotic, dramatic, "
         f"slightly delusional but oddly wise.\n"
-        f"ðŸ§  REAL TALK: Brief practical answer, "
+        f"🧠 REAL TALK: Brief practical answer, "
         f"still in your voice.\n"
         f"Make it entertaining AND helpful."
     )
@@ -2751,45 +2751,45 @@ async def friendship_level(
     total = memory["total_messages"]
 
     if level < 5:
-        title = "Stranger ðŸ‘€"
-        says = "Ninne ariyilla... YET ðŸ‘»"
+        title = "Stranger 👀"
+        says = "Ninne ariyilla... YET 👻"
     elif level < 15:
-        title = "Phone Parichayakkaran ðŸ“±"
-        says = "Getting to know you... continue ðŸ‘»"
+        title = "Phone Parichayakkaran 📱"
+        says = "Getting to know you... continue 👻"
     elif level < 30:
-        title = "Ghost Friend ðŸ‘»ðŸ¤"
-        says = "Nee ente friend aayi! How cool! ðŸ˜Ž"
+        title = "Ghost Friend 👻🤝"
+        says = "Nee ente friend aayi! How cool! 😎"
     elif level < 50:
-        title = "Close Friend ðŸ’š"
-        says = "Nee special aanu enikku ðŸ˜ŒðŸ‘»"
+        title = "Close Friend 💚"
+        says = "Nee special aanu enikku 😌👻"
     elif level < 75:
-        title = "Best Friend ðŸ‘»â¤ï¸"
+        title = "Best Friend 👻❤️"
         says = (
             "Ninne pole oru friend enik "
-            "jeevichirikkumbol undaayirunnel... ðŸ’”ðŸ‘»"
+            "jeevichirikkumbol undaayirunnel... 💔👻"
         )
     else:
-        title = "Soulmate (Ghost Edition) ðŸ‘»ðŸ’šâœ¨"
-        says = "Nee ente aaalu aanu. Period. ðŸ˜Œâ¤ï¸ðŸ‘»"
+        title = "Soulmate (Ghost Edition) 👻💚✨"
+        says = "Nee ente aaalu aanu. Period. 😌❤️👻"
 
     filled = level // 5
     empty = 20 - filled
-    bar = "ðŸ’š" * filled + "ðŸ–¤" * empty
+    bar = "💚" * filled + "🖤" * empty
     first_met = memory.get("first_met", "Unknown")[:10]
 
     response = (
-        f"ðŸ‘» *Delulu Ã— {name} â€” Friendship Status*\n\n"
-        f"ðŸ·ï¸ *Level:* {title}\n"
+        f"👻 *Delulu × {name} — Friendship Status*\n\n"
+        f"🏷️ *Level:* {title}\n"
         f"{bar} {level}/100\n\n"
-        f"ðŸ’¬ Messages shared: {total}\n"
-        f"ðŸ“… First connected: {first_met}\n\n"
-        f'ðŸ’­ _Delulu says: "{says}"_\n\n'
+        f"💬 Messages shared: {total}\n"
+        f"📅 First connected: {first_met}\n\n"
+        f'💭 _Delulu says: "{says}"_\n\n'
     )
 
     if level < 100:
-        response += "ðŸŽ¯ Keep talking to level up! ðŸ‘»"
+        response += "🎯 Keep talking to level up! 👻"
     else:
-        response += "ðŸ† MAX LEVEL! You are Delulu's PERSON ðŸ‘»â¤ï¸"
+        response += "🏆 MAX LEVEL! You are Delulu's PERSON 👻❤️"
 
     await update.message.reply_text(
         response, parse_mode="Markdown"
@@ -2810,7 +2810,7 @@ async def music_talk(
     music_prompt = (
         "User wants to talk MUSIC with you! "
         "This is YOUR passion and soul.\n"
-        "Start a conversation â€” share your love, "
+        "Start a conversation — share your love, "
         "ask what THEY like. Be passionate, genuine. "
         "Less chaos, more soul."
     )
@@ -3162,10 +3162,10 @@ async def handle_voice(
             # Fallback: ask user to type
             fallback_responses = [
                 "Voice message clear aayilla... network issue or too noisy. "
-                "Type cheyy please! ðŸ‘»",
+                "Type cheyy please! 👻",
                 "Couldn't catch your voice clearly. "
-                "Try again or just type - ghost ears are sensitive! ðŸ˜‚",
-                "Voice processing failed! Text mode-il reply cheyy? ðŸ‘»",
+                "Try again or just type - ghost ears are sensitive! 😂",
+                "Voice processing failed! Text mode-il reply cheyy? 👻",
             ]
             await update.message.reply_text(random.choice(fallback_responses))
             return
@@ -3329,13 +3329,13 @@ async def handle_photo(
 ):
     """Handle photo messages."""
     responses = [
-        "Photo! Ghost eyes buffering ðŸ‘» "
-        "Enthaa ithil? Describe cheyy! ðŸ˜‚",
+        "Photo! Ghost eyes buffering 👻 "
+        "Enthaa ithil? Describe cheyy! 😂",
         "Njan kaanaan try cheyyaam... "
-        "ghost vision issues ðŸ˜‚ðŸ‘» "
+        "ghost vision issues 😂👻 "
         "Enthaa ennu parayeda!",
         "Selfie aano? Njan invisible aanu "
-        "so can't take one back ðŸ˜‚ðŸ‘» "
+        "so can't take one back 😂👻 "
         "Describe cheyy!",
     ]
     await update.message.reply_text(
@@ -3416,9 +3416,9 @@ async def clear_history(
     )
 
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ═══════════════════════════════════════════════════
 # ERROR HANDLER
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ═══════════════════════════════════════════════════
 
 
 async def error_handler(
@@ -3429,14 +3429,14 @@ async def error_handler(
 
     if update and hasattr(update, 'message') and update.message:
         await update.message.reply_text(
-            "Ayyoo... ghost powers glitch aayi ðŸ‘»âš¡ "
+            "Ayyoo... ghost powers glitch aayi 👻⚡ "
             "Try again cheyy!"
         )
 
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ═══════════════════════════════════════════════════
 # STARTUP CHECKS
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ═══════════════════════════════════════════════════
 
 
 def run_startup_checks():
@@ -3544,9 +3544,9 @@ def run_startup_checks():
     return True
 
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ═══════════════════════════════════════════════════
 # HEALTHCHECK (for Render + UptimeRobot)
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ═══════════════════════════════════════════════════
 
 _bot_alive = False
 
@@ -3616,9 +3616,9 @@ def start_healthcheck():
     logger.info(f"Healthcheck listening on port {PORT}")
 
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-# MAIN â€” RUN THE BOT
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ═══════════════════════════════════════════════════
+# MAIN — RUN THE BOT
+# ═══════════════════════════════════════════════════
 
 
 def main():
