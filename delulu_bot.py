@@ -3156,46 +3156,50 @@ def run_startup_checks():
                 full_name = f"models/{name}" if not name.startswith("models/") else name
                 return full_name in available_model_names
             if GEMINI_MODEL and not check_model(GEMINI_MODEL):
-                print(f"âš ï¸   Warning: '{GEMINI_MODEL}' not available via Gemini API.")
+                print(f"WARN: '{GEMINI_MODEL}' not available via Gemini API.")
         except Exception as e:
-            print(f"âš ï¸   Could not verify Gemini models: {e}")
+            print(f"WARN: Could not verify Gemini models: {e}")
 
-    print("â•" * 55)
-    print("ðŸ‘» DELULU AI v4 - Multi-Provider Edition")
-    print("â•" * 55)
+    print("=" * 55)
+    print("DELULU AI v4 - Multi-Provider Edition")
+    print("=" * 55)
 
     # Check Telegram token
     if not TELEGRAM_TOKEN or TELEGRAM_TOKEN == "":
-        print("âŒ TELEGRAM_TOKEN not set!")
+        print("ERROR: TELEGRAM_TOKEN not set!")
         print("   Add it to .env file")
         return False
-    print("âœ… Telegram Token: Set")
+    print("OK: Telegram Token: Set")
 
     # Check Groq API key
     if not GROQ_API_KEY:
-        print("âŒ GROQ_API_KEY not set!")
+        print("ERROR: GROQ_API_KEY not set!")
         print("   Get it from console.groq.com and add to .env")
         return False
-    print("âœ… Groq API Key: Set")
+    print("OK: Groq API Key: Set")
 
     # Check Jina API keys
     if not jina_clients:
-        print("âŒ JINA_API_KEYS not set!")
+        print("ERROR: JINA_API_KEYS not set!")
         print("   Add at least one Jina key to .env")
         return False
-    print(f"âœ… Jina Embeddings: {len(jina_clients)} key(s)")
+    print(f"OK: Jina Embeddings: {len(jina_clients)} key(s)")
 
     # Check Gemini API key (optional fallback)
     if GEMINI_API_KEY:
-        print("âœ… Gemini API Key: Set (fallback)")
+        print("OK: Gemini API Key: Set (fallback)")
     else:
-        print("â„¹ï¸  Gemini API Key: Not set (no fallback)")
+        print("INFO: Gemini API Key: Not set (no fallback)")
 
-    rag_stats = load_rag_documents()
+    try:
+        rag_stats = load_rag_documents()
+    except Exception as e:
+        logger.error(f"RAG loading failed: {e}", exc_info=True)
+        rag_stats = {"files": 0, "chunks": 0, "enabled": RAG_ENABLED, "loaded_at": "error"}
     bible_loaded = refresh_character_bible()
     if RAG_ENABLED:
         print(
-            f"âœ… RAG: {rag_stats['files']} file(s), "
+            f"OK: RAG: {rag_stats['files']} file(s), "
             f"{rag_stats['chunks']} chunk(s)"
         )
         if rag_stats["chunks"] == 0:
@@ -3203,45 +3207,45 @@ def run_startup_checks():
                 f"   Add .txt/.md/.json files in: {RAG_DIR}"
             )
     else:
-        print("â„¹ï¸  RAG: Disabled")
+        print("INFO: RAG: Disabled")
 
     if bible_loaded:
-        print(f"âœ… Character Bible: Loaded from {CHARACTER_BIBLE_FILE}")
+        print(f"OK: Character Bible: Loaded from {CHARACTER_BIBLE_FILE}")
     else:
-        print(f"âš ï¸  Character Bible missing: {CHARACTER_BIBLE_FILE}")
+        print(f"WARN: Character Bible missing: {CHARACTER_BIBLE_FILE}")
 
     if VOICE_INPUT_ENABLED:
         if WHISPER_AVAILABLE:
-            print("âœ… Voice input: Ready (faster-whisper)")
+            print("OK: Voice input: Ready (faster-whisper)")
         else:
-            print("âš ï¸  Voice input enabled but faster-whisper is missing")
+            print("WARN: Voice input enabled but faster-whisper is missing")
     else:
-        print("â„¹ï¸  Voice input: Disabled")
+        print("INFO: Voice input: Disabled")
 
     if VOICE_OUTPUT_ENABLED:
         engine = get_tts_engine()
         if engine == "edge":
-            print(f"âœ… Voice output: Ready (edge-tts: {EDGE_TTS_DEFAULT_VOICE})")
+            print(f"OK: Voice output: Ready (edge-tts: {EDGE_TTS_DEFAULT_VOICE})")
         elif engine == "gtts":
-            print("âœ… Voice output: Ready (gTTS)")
+            print("OK: Voice output: Ready (gTTS)")
         else:
-            print("âš ï¸  Voice output enabled but no TTS engine is available")
+            print("WARN: Voice output enabled but no TTS engine is available")
     else:
-        print("â„¹ï¸  Voice output: Disabled")
+        print("INFO: Voice output: Disabled")
 
-    print("â•" * 55)
-    print("ðŸ’š All checks passed!")
-    print(f"ðŸ§  Chat: Groq ({GROQ_MODEL})")
+    print("=" * 55)
+    print("All checks passed!")
+    print(f"Chat: Groq ({GROQ_MODEL})")
     if GEMINI_API_KEY:
-        print(f"ðŸ” Chat fallback: Gemini ({GEMINI_MODEL})")
-    print(f"ðŸ“š Embeddings: Jina ({JINA_MODEL}) - {len(jina_clients)} key(s)")
-    print(f"ðŸŽ™ï¸  TTS engine: {get_tts_engine()}")
-    print(f"ðŸ¤ Companion mode: {'ON' if COMPANION_ALWAYS_ON else 'OFF'}")
-    print(f"ðŸŒ¡ï¸  Temperature: {TEMPERATURE}")
-    print(f"ðŸ“ Max tokens: {MAX_TOKENS}")
-    print(f"ðŸ“š RAG top-k: {RAG_TOP_K}")
-    print(f"ðŸ¥ Healthcheck: port {PORT}")
-    print("â•" * 55)
+        print(f"Chat fallback: Gemini ({GEMINI_MODEL})")
+    print(f"Embeddings: Jina ({JINA_MODEL}) - {len(jina_clients)} key(s)")
+    print(f"TTS engine: {get_tts_engine()}")
+    print(f"Companion mode: {'ON' if COMPANION_ALWAYS_ON else 'OFF'}")
+    print(f"Temperature: {TEMPERATURE}")
+    print(f"Max tokens: {MAX_TOKENS}")
+    print(f"RAG top-k: {RAG_TOP_K}")
+    print(f"Healthcheck: port {PORT}")
+    print("=" * 55)
 
     return True
 
@@ -3250,12 +3254,16 @@ def run_startup_checks():
 # HEALTHCHECK (for Render + UptimeRobot)
 # â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
+_bot_alive = False
 
 class _HealthHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.end_headers()
-        self.wfile.write(b"OK")
+        if _bot_alive:
+            self.wfile.write(b"OK")
+        else:
+            self.wfile.write(b"STARTING")
     def log_message(self, *a):
         pass
 
@@ -3273,9 +3281,23 @@ def start_healthcheck():
 
 
 def main():
-    """Start Delulu."""
+    """Start Delulu with auto-restart on crash."""
 
     start_healthcheck()
+
+    while True:
+        try:
+            _run_bot()
+        except Exception as e:
+            logger.error(f"Bot crashed: {e}", exc_info=True)
+            logger.info("Restarting in 5 seconds...")
+            import time
+            time.sleep(5)
+
+
+def _run_bot():
+    """Internal: start bot polling once."""
+    global _bot_alive
 
     if not run_startup_checks():
         print("\nâš ï¸  Fix the issues above and try again!")
@@ -3327,18 +3349,22 @@ def main():
     # Error handler
     app.add_error_handler(error_handler)
 
+    _bot_alive = True
+
     print()
-    print("ðŸ‘©â€ ðŸ’» Delulu is AUTHENTIC... her human side!")
-    print("ðŸ“± Companion mode: ACTIVATED")
-    print("ðŸŒŸ Potential: UNLIMITED")
-    print("ðŸ’° Cost: â‚¹0 â€” FREE (Groq + Jina + Gemini)")
-    print("ðŸ’š Ready to make new friends")
+    print("Delulu is AUTHENTIC... her human side!")
+    print("Companion mode: ACTIVATED")
+    print("Cost: 0 -- FREE (Groq + Jina + Gemini)")
+    print("Ready to make new friends")
     print()
-    print("Bot is running... Delulu personality! âœ¨")
+    print("Bot is running...")
     print("Press Ctrl+C to stop")
     print()
 
-    app.run_polling(allowed_updates=Update.ALL_TYPES)
+    try:
+        app.run_polling(allowed_updates=Update.ALL_TYPES)
+    finally:
+        _bot_alive = False
 
 
 if __name__ == "__main__":
