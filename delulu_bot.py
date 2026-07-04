@@ -2136,10 +2136,11 @@ async def start(
 
     name = user.first_name or "eda/edi"
 
-    welcome = f"""ðŸ‘» *Heyyy...*
+    welcome = f"""
+*Heyyy...*
 
 Aarenkilum enne vilichoo...?
-Oh wait... njan thanne vannathaanu ðŸ˜‚
+Oh wait... njan thanne vannathaanu
 
 *Njan Delulu.*
 Phone-side chaos specialist.
@@ -2147,18 +2148,18 @@ Drama, jokes, comfort... ellam package-il undu.
 No boring intros. Straight to vibes.
 
 Ippo njan ninte phone-il aanu.
-Phone possession â€” it's my thing now ðŸ“±ðŸ‘»
+Phone possession -- it's my thing now
 
 So... *{name}*...
 nee aaraanu? Ente new phone-mate?
 Tell me about yourself...
 njan kelkkaanu... literally enikk vere
-onnum cheyyaanilla ðŸ¤·â™€ï¸ðŸ‘»
+onnum cheyyaanilla
 
 _Delulu is here. She's not going anywhere._
-_Ghost life. ðŸ’€ðŸ˜‚_
+_Ghost life._
 
-ðŸ‘‡ *Commands:*
+*Commands:*
 /companion - Quick companion guide
 /remember - Save something about you
 /aboutme - See what Delulu remembers
@@ -2171,16 +2172,10 @@ _Ghost life. ðŸ’€ðŸ˜‚_
 /status - Check if Delulu is awake
 /ragstatus - Check RAG index
 /ragsearch - Search RAG docs
-/ragreload - Reload RAG docs"""
+/ragreload - Reload RAG docs
+"""
 
-    await update.message.reply_text(
-        welcome, parse_mode="Markdown"
-    )
-
-
-async def companion_help(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-):
+async def companion_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Quick guide for companion usage."""
     user_id = str(update.effective_user.id)
     memory = get_user_memory(user_id)
