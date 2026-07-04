@@ -3309,6 +3309,8 @@ def _test_apis() -> str:
     results["checks"]["jina_keys"] = str(len(jina_clients))
     results["checks"]["bot_alive"] = str(_bot_alive)
     results["checks"]["rag_chunks"] = str(len(rag_chunks))
+    if _last_error:
+        results["last_error"] = _last_error
 
     return json.dumps(results, indent=2)
 
@@ -3327,17 +3329,18 @@ def start_healthcheck():
 
 def main():
     """Start Delulu with auto-restart on crash."""
-
+    import time as _time
     start_healthcheck()
 
     while True:
         try:
             _run_bot()
-        except Exception as e:
-            logger.error(f"Bot crashed: {e}", exc_info=True)
+        except BaseException as e:
+            global _last_error
+            _last_error = f"{type(e).__name__}: {e}"
+            logger.error(f"Bot crashed: {_last_error}", exc_info=True)
             logger.info("Restarting in 5 seconds...")
-            import time
-            time.sleep(5)
+            _time.sleep(5)
 
 
 def _run_bot():
@@ -3345,8 +3348,9 @@ def _run_bot():
     global _bot_alive
 
     if not run_startup_checks():
-        print("\nâš ï¸  Fix the issues above and try again!")
-        print("   Need help? Check your env variables and install packages.")
+        print("\nStartup checks failed - will retry in 30s")
+        import time as _time
+        _time.sleep(30)
         return
 
     app = Application.builder().token(TELEGRAM_TOKEN).build()
@@ -3409,7 +3413,8 @@ def _run_bot():
     try:
         app.run_polling(allowed_updates=Update.ALL_TYPES)
     finally:
-        _bot_alive = False
+_bot_alive = False
+_last_error = None
 
 
 if __name__ == "__main__":
