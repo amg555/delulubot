@@ -2296,6 +2296,9 @@ _Ghost life._
 /ragsearch - Search RAG docs
 /ragreload - Reload RAG docs
 """
+    await update.message.reply_text(
+        welcome, parse_mode="Markdown"
+    )
 
 async def companion_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Quick guide for companion usage."""
