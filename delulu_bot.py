@@ -237,6 +237,15 @@ LANG_SCRIPTS = {
 
 EMOJI_LEVELS = ["none", "default", "high"]
 
+LANG_STYLES = {
+    "manglish": "Speak in Manglish (Malayalam + English mix). Use casual Malayalam words like eda, entha, sheriyeda, ah, etc. naturally with English. This is your default style.",
+    "hinglish": "Speak in Hinglish (Hindi + English mix). Use casual Hindi words like yaar, kya, theek hai, nahi, accha, etc. naturally with English.",
+    "english": "Speak in pure English only. No mixing with Indian languages. Keep it casual and friendly.",
+    "tanglish": "Speak in Tanglish (Tamil + English mix). Use casual Tamil words like da, enna, sari, aama, ille, etc. naturally with English.",
+    "tenglish": "Speak in Telugu + English mix. Use casual Telugu words like ra, emi, sari, kadu, undi, etc. naturally with English.",
+    "kanglish": "Speak in Kannada + English mix. Use casual Kannada words like guru, enu, sari, illa, etc. naturally with English.",
+}
+
 
 def detect_text_language(text: str) -> str:
     """Detect dominant script language in text. Returns lang code or 'en'."""
@@ -1511,6 +1520,7 @@ def ensure_memory_shape(memory: dict) -> dict:
         "voice_style": "sweet",
         "voice_lang": "auto",
         "tone": "default",
+        "lang_style": "manglish",
         "emoji_level": "default",
         "vibe_profile": {
             "short_msgs": 0,
@@ -1543,6 +1553,7 @@ def get_user_memory(user_id: str) -> dict:
             "voice_style": "sweet",
             "voice_lang": "auto",
             "tone": "default",
+            "lang_style": "manglish",
             "emoji_level": "default",
             "vibe_profile": {
                 "short_msgs": 0,
@@ -2110,6 +2121,8 @@ async def get_delulu_response(
     else:
         emoji_instruction = "Use 0 to 1 emoji per message at most."
 
+    user_lang_style = memory.get("lang_style", "manglish")
+
     dynamic_instruction = build_system_instruction() + "\n\n=== CURRENT CONVERSATION CONTEXT ===\n"
     dynamic_instruction += (
         f"emotion={emotion}. {emotion_ctx} {friendship_ctx} "
@@ -2122,6 +2135,7 @@ async def get_delulu_response(
         f"{random_dialogue} "
         f"\n--- USER PREFERENCE: TONE ---\n{tone_instruction}\n"
         f"--- USER PREFERENCE: EMOJIS ---\n{emoji_instruction}\n"
+        f"--- USER PREFERENCE: LANGUAGE STYLE ---\n{LANG_STYLES.get(user_lang_style, LANG_STYLES['manglish'])}\n"
         "Reply in 2-5 sentences, chat-style, emotionally first. "
         "Do not bring up past memories unless user explicitly asks. "
         "No assistant tone. No headings/labels unless user asks.\n\n"
@@ -2271,6 +2285,7 @@ _Ghost life._
 /sing - Ask Delulu to sing
 /ask - Ask Delulu for advice
 /tone - Change Delulu's tone
+/langstyle - Language style (manglish/hinglish/english/tanglish/tenglish/kanglish)
 /voicelang - Voice language
 /emoji - Emoji frequency
 /settings - See your settings
@@ -2297,9 +2312,10 @@ async def companion_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "5. Use /music when you need creative boost.\n"
         "6. Use /sing for a sing-style voice reply.\n"
         "7. Use /tone to change my conversation style.\n"
-        "8. Use /voicelang to set voice language.\n"
-        "9. Use /emoji to control emoji frequency.\n"
-        "10. Use /settings to see all your preferences."
+        "8. Use /langstyle to change my language mix (manglish/hinglish/etc).\n"
+        "9. Use /voicelang to set voice language.\n"
+        "10. Use /emoji to control emoji frequency.\n"
+        "11. Use /settings to see all your preferences."
     )
     await update.message.reply_text(text)
 
@@ -2478,6 +2494,35 @@ async def voicelang_command(
     )
 
 
+async def langstyle_command(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+):
+    """Set Delulu's conversation language style."""
+    user_id = str(update.effective_user.id)
+    memory = get_user_memory(user_id)
+    arg = (context.args[0].strip().lower() if context.args else "")
+
+    if arg in LANG_STYLES:
+        memory["lang_style"] = arg
+        save_memories(user_memories)
+        await update.message.reply_text(f"Language style set to: {arg}")
+        return
+
+    if not arg:
+        current = memory.get("lang_style", "manglish")
+        await update.message.reply_text(
+            f"Current language style: {current}\n\n"
+            "Available styles:\n"
+            + "\n".join(f"/langstyle {s}" for s in LANG_STYLES)
+        )
+        return
+
+    await update.message.reply_text(
+        f"Unknown style: {arg}\n"
+        "Try: " + ", ".join(f"/langstyle {s}" for s in LANG_STYLES)
+    )
+
+
 async def settings_command(
     update: Update, context: ContextTypes.DEFAULT_TYPE
 ):
@@ -2485,6 +2530,7 @@ async def settings_command(
     user_id = str(update.effective_user.id)
     memory = get_user_memory(user_id)
     tone = memory.get("tone", "default")
+    lang_style = memory.get("lang_style", "manglish")
     voice_lang = memory.get("voice_lang", "auto")
     voice_lang_name = "auto-detect"
     if voice_lang != "auto":
@@ -2497,13 +2543,15 @@ async def settings_command(
     await update.message.reply_text(
         "Your settings\n"
         f"- Tone: {tone}\n"
+        f"- Language style: {lang_style}\n"
         f"- Voice replies: {'ON' if voice_enabled else 'OFF'}\n"
         f"- Voice style: {voice_style}\n"
         f"- Voice language: {voice_lang_name} ({voice_lang})\n"
         f"- Emojis: {emoji_level}\n"
         f"- TTS engine: {engine}\n\n"
         "Change settings:\n"
-        "/tone <style> - Change conversation tone\n"
+        "/tone <style> - Conversation tone\n"
+        "/langstyle <style> - Language mix (manglish/hinglish/etc)\n"
         "/voicelang <code> - Voice language\n"
         "/voice on|off|sweet|default - Voice mode\n"
         "/emoji none|default|high - Emoji frequency\n"
@@ -3628,6 +3676,7 @@ def _run_bot():
     app.add_handler(CommandHandler("emoji", emoji_command))
     app.add_handler(CommandHandler("settings", settings_command))
     app.add_handler(CommandHandler("ping", ping_command))
+    app.add_handler(CommandHandler("langstyle", langstyle_command))
 
     # Message handlers
     app.add_handler(
