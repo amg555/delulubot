@@ -72,8 +72,9 @@ GEMINI_FALLBACK_MODELS = [
         "GEMINI_FALLBACK_MODELS",
         "gemini-2.0-flash",
     ).split(",")
-    if m.strip()
 ]
+
+TIMEOUT_SECONDS = int(os.getenv("TIMEOUT_SECONDS", "60"))
 GEMINI_QUOTA_COOLDOWN_SECONDS = int(
     os.getenv("GEMINI_QUOTA_COOLDOWN_SECONDS", "60")
 )
@@ -282,6 +283,7 @@ if GEMINI_API_KEY:
 groq_client = OpenAI(
     api_key=GROQ_API_KEY,
     base_url="https://api.groq.com/openai/v1",
+    timeout=60.0,
 ) if GROQ_API_KEY else None
 
 jina_clients = [
@@ -1431,7 +1433,12 @@ async def generate_delulu_reply_with_guard(
 
     for attempt in range(attempts):
         response = await model.generate_content_async(
-            working_contents
+            working_contents,
+            generation_config=genai.types.GenerationConfig(
+                max_output_tokens=MAX_TOKENS,
+                temperature=TEMPERATURE,
+            ),
+            request_options={"timeout": 60},
         )
         reply = (getattr(response, "text", "") or "").strip()
         if "[CONTEXT:" in reply:
@@ -1945,6 +1952,7 @@ async def _groq_generate_with_guard(
                     temperature=TEMPERATURE,
                     max_tokens=MAX_TOKENS,
                     top_p=0.9,
+                    timeout=60,
                 ),
             )
             reply = (response.choices[0].message.content or "").strip()
@@ -2137,11 +2145,14 @@ async def get_delulu_response(
     # ===== 1. TRY GROQ (PRIMARY) =====
     if groq_client:
         try:
-            reply = await _groq_generate_with_guard(
-                system_instruction=dynamic_instruction,
-                messages_openai=openai_messages,
-                user_name=user_name,
-                user_message=user_message,
+            reply = await asyncio.wait_for(
+                _groq_generate_with_guard(
+                    system_instruction=dynamic_instruction,
+                    messages_openai=openai_messages,
+                    user_name=user_name,
+                    user_message=user_message,
+                ),
+                timeout=TIMEOUT_SECONDS,
             )
             reply = de_robotify_reply(reply, user_message)
             update_memory(user_id, user_message, reply)
@@ -2174,11 +2185,14 @@ async def get_delulu_response(
             for model_name in available_models:
                 try:
                     model = get_model(model_name, system_instruction=dynamic_instruction)
-                    reply = await generate_delulu_reply_with_guard(
-                        model=model,
-                        contents=contents,
-                        user_name=user_name,
-                        user_message=user_message,
+                    reply = await asyncio.wait_for(
+                        generate_delulu_reply_with_guard(
+                            model=model,
+                            contents=contents,
+                            user_name=user_name,
+                            user_message=user_message,
+                        ),
+                        timeout=TIMEOUT_SECONDS,
                     )
                     reply = de_robotify_reply(reply, user_message)
                     gemini_runtime["active_model"] = model_name
