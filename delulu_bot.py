@@ -3257,13 +3257,16 @@ def run_startup_checks():
 _bot_alive = False
 
 class _HealthHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
+    def _respond(self):
         self.send_response(200)
         self.end_headers()
-        if _bot_alive:
-            self.wfile.write(b"OK")
-        else:
-            self.wfile.write(b"STARTING")
+        if self.command == "GET":
+            body = b"OK" if _bot_alive else b"STARTING"
+            self.wfile.write(body)
+    def do_GET(self):
+        self._respond()
+    def do_HEAD(self):
+        self._respond()
     def log_message(self, *a):
         pass
 
