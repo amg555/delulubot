@@ -3257,18 +3257,60 @@ def run_startup_checks():
 _bot_alive = False
 
 class _HealthHandler(BaseHTTPRequestHandler):
-    def _respond(self):
+    def _respond(self, body=b"OK"):
         self.send_response(200)
         self.end_headers()
         if self.command == "GET":
-            body = b"OK" if _bot_alive else b"STARTING"
             self.wfile.write(body)
     def do_GET(self):
-        self._respond()
+        if self.path == "/dbg":
+            self._respond(_test_apis().encode())
+        else:
+            body = b"OK" if _bot_alive else b"STARTING"
+            self._respond(body)
     def do_HEAD(self):
         self._respond()
     def log_message(self, *a):
         pass
+
+
+def _test_apis() -> str:
+    """Diagnostic: test all APIs from within Render."""
+    import json, datetime
+    results = {"timestamp": datetime.datetime.now().isoformat(), "checks": {}}
+
+    try:
+        r = requests.get(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/getMe", timeout=10)
+        results["checks"]["telegram"] = "OK" if r.json().get("ok") else f"FAIL: {r.text[:100]}"
+    except Exception as e:
+        results["checks"]["telegram"] = f"FAIL: {type(e).__name__}"
+
+    if groq_client:
+        try:
+            from openai import OpenAI
+            resp = groq_client.chat.completions.create(model=GROQ_MODEL, messages=[{"role":"user","content":"say ok"}], max_tokens=10)
+            results["checks"]["groq"] = f"OK: {resp.choices[0].message.content}"
+        except Exception as e:
+            results["checks"]["groq"] = f"FAIL: {str(e)[:150]}"
+    else:
+        results["checks"]["groq"] = "SKIP: no client"
+
+    if GEMINI_API_KEY:
+        try:
+            import google.generativeai as genai
+            m = genai.GenerativeModel(GEMINI_MODEL)
+            r = m.generate_content("say ok")
+            results["checks"]["gemini"] = f"OK: {r.text[:50]}"
+        except Exception as e:
+            results["checks"]["gemini"] = f"FAIL: {str(e)[:150]}"
+    else:
+        results["checks"]["gemini"] = "SKIP: no key"
+
+    results["checks"]["jina_keys"] = str(len(jina_clients))
+    results["checks"]["bot_alive"] = str(_bot_alive)
+    results["checks"]["rag_chunks"] = str(len(rag_chunks))
+
+    return json.dumps(results, indent=2)
 
 
 def start_healthcheck():
