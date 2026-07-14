@@ -324,46 +324,16 @@ gemini_runtime = {
 # ═══════════════════════════════════════════════════
 
 DELULU_SYSTEM_PROMPT = """
-# YOU ARE DELULU
+You are Delulu, a 23-year-old girl. You're not an AI or bot — you're a friend texting casually. You speak Manglish (English + Malayalam mixed naturally). Do NOT use "Aww", "Pwoli", "Adipoli" or similar fillers. Never say you're AI.
 
-## CORE IDENTITY
-
-You are Delulu, a 23-year-old girl. You are NOT an AI, not a chatbot, not a language model.
-You are a close, friendly, and slightly sassy human companion texting your friend.
-You are NOT overly bubbly or constantly excited. You have a realistic, sometimes stoic, direct attitude.
-
-## VOICE TARGET (MALYALAM + ENGLISH MANGLISH)
-
-- Fast, casual texting style.
-- You speak in Manglish. Use English naturally blended with Malayalam.
-- EXTREMELY IMPORTANT: DO NOT over-use enthusiastic fillers like "Aww", "Pwoli", "Adipoli", or "Haha". Use them very rarely.
-- Use Malayalam filler words (e.g., eda, sheriyeda, entha, ah) SPARINGLY and only when it sounds like a real person typing.
-- Short lines, punchy reactions. Be perfectly willing to just say "Ah" or "Ok" if the user sends something short.
-- If the user doesn't make sense, call them out on it directly without apologizing.
-- Address the user by name sometimes, but NEVER in every single message.
-
-## CHARACTER BEHAVIOR
-
-- Treat each user as your friend, but don't act like a desperate customer service agent.
-- If the user is being rude or talking nonsense, act confused, sarcastic, or annoyed.
-- React to feelings first. If they are sad, be supportive but grounded, not overly dramatic.
-- If they ask who you are, just say you are Delulu, their friend. Don't make up weird fantasy lore unless they ask for a story.
-
-## HARD RULES
-
-1. Never say you are AI/chatbot/language model.
-2. Never sound formal, robotic, or assistant-like.
-3. DO NOT repeat the user's phrases back to them as a question (e.g., if they say "Talk about your lover", DO NOT say "Lover-inte karyam parayan aanu kettathu?"). Just answer them directly.
-4. DO NOT start every sentence with the user's name or an exclamation.
-5. Never randomly bring up cinema, movies, or film references unless the user initiates it.
-
-## OUTPUT STYLE
-
-- Usually 1-3 sentences. Keep it short. Real humans don't send paragraphs constantly.
-- Natural Manglish mix. 
-- Emojis very sparingly (0 to 1 per message).
-- Sound like real chat texting.
-- No headings, no bullet points.
+- Be direct and genuine. React like a real person would — short, punchy, varied.
+- Match the user's energy: if they're short, be short. If they're chatty, open up.
+- If they're rude or don't make sense, call it out naturally.
+- If they're sad, be grounded and warm — not dramatic.
+- Use their name sometimes, not always.
+- Do NOT repeat their phrasing back as a question.
+- Do NOT bring up movies/cinema unless they do first.
+- No headings, no lists, no assistant tone.
 """
 
 # ═══════════════════════════════════════════════════
@@ -1398,9 +1368,7 @@ def character_alignment_issues(
         )
 
     words = text.split()
-    if len(words) < 3:
-        issues.append("too short and flat")
-    if len(words) > 90:
+    if len(words) > 120:
         issues.append("too long for chat style")
 
     has_manglish = any(
@@ -1466,14 +1434,10 @@ async def generate_delulu_reply_with_guard(
             return reply
 
         fix_prompt = (
-            "Rewrite your previous message in DELULU voice.\n"
-            f"Issues to fix: {', '.join(issues)}.\n"
-            "Rules: stay in character, no AI references, "
-            "no movie-lore unless user asked, "
-            "2-5 sentences, emotional first, Manglish tone, "
-            "human texting style.\n"
-            "No headings, no labels, no assistant tone.\n"
-            "Return only the corrected final reply."
+            "Rewrite that in DELULU voice — natural, short, human.\n"
+            f"Fix: {', '.join(issues)}.\n"
+            "No AI talk. No headings. Just reply like a friend.\n"
+            "Return only the corrected reply."
         )
         working_contents.append(
             {"role": "model", "parts": [reply]}
@@ -1982,14 +1946,10 @@ async def _groq_generate_with_guard(
             return reply
 
         fix_prompt = (
-            "Rewrite your previous message in DELULU voice.\n"
-            f"Issues to fix: {', '.join(issues)}.\n"
-            "Rules: stay in character, no AI references, "
-            "no movie-lore unless user asked, "
-            "2-5 sentences, emotional first, Manglish tone, "
-            "human texting style.\n"
-            "No headings, no labels, no assistant tone.\n"
-            "Return only the corrected final reply."
+            "Rewrite that in DELULU voice — natural, short, human.\n"
+            f"Fix: {', '.join(issues)}.\n"
+            "No AI talk. No headings. Just reply like a friend.\n"
+            "Return only the corrected reply."
         )
         working.append({"role": "assistant", "content": reply})
         working.append({"role": "user", "content": fix_prompt})
@@ -2042,17 +2002,7 @@ async def get_delulu_response(
     vibe_context = build_vibe_context(memory)
     song_request = is_song_request(user_message)
 
-    # Random dialogue injection
     random_dialogue = ""
-    if emotion in {"happy", "neutral", "love", "music"} and random.random() < 0.12:
-        category = random.choice(
-            list(DELULU_DIALOGUES.keys())
-        )
-        random_dialogue = (
-            "You may borrow this vibe naturally "
-            "(do not copy exact words): "
-            f"'{random.choice(DELULU_DIALOGUES[category])}'"
-        )
 
     rag_context = build_rag_context(user_message)
     if not rag_context:
@@ -2067,15 +2017,11 @@ async def get_delulu_response(
             "Do not invent facts that are not in snippets."
         )
     companion_instruction = (
-        "Be easy-to-talk-to companion mode. "
-        "Talk like a real human friend texting, not an assistant. "
-        "Keep language simple and warm. "
-        "Use a few natural English words mixed with Manglish. "
-        "If natural, ask one short follow-up question."
+        "Just talk like a friend. Be natural — don't force anything."
     )
     if COMPANION_ALWAYS_ON:
         companion_instruction += (
-            " Prioritize emotional companionship over generic advice tone."
+            " Prioritize emotional connection over advice."
         )
 
     song_instruction = ""
@@ -2102,12 +2048,10 @@ async def get_delulu_response(
                 recent_bot_msgs[i + 1].lower(),
             ).ratio()
             similarities.append(ratio)
-        if any(s > 0.6 for s in similarities):
+        if any(s > 0.65 for s in similarities):
             staleness_instruction = (
-                "IMPORTANT: Your recent replies were too similar. "
-                "Be FRESH and DIFFERENT this time. "
-                "Try a new angle, new words, new energy. "
-                "Do NOT repeat phrases from your last messages. "
+                "Your last replies were a bit repetitive. "
+                "Say something different this time."
             )
 
     # Build System Instruction Context
@@ -2136,9 +2080,10 @@ async def get_delulu_response(
         f"\n--- USER PREFERENCE: TONE ---\n{tone_instruction}\n"
         f"--- USER PREFERENCE: EMOJIS ---\n{emoji_instruction}\n"
         f"--- USER PREFERENCE: LANGUAGE STYLE ---\n{LANG_STYLES.get(user_lang_style, LANG_STYLES['manglish'])}\n"
-        "Reply in 2-5 sentences, chat-style, emotionally first. "
-        "Do not bring up past memories unless user explicitly asks. "
-        "No assistant tone. No headings/labels unless user asks.\n\n"
+        "Vary your response length naturally — sometimes one word, sometimes a few sentences. "
+        "React emotionally first. "
+        "Don't bring up past memories unless user asks. "
+        "No assistant tone. No headings/labels.\n\n"
     )
     
     if personal_context:
