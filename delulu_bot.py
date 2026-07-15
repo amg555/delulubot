@@ -310,8 +310,8 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("telegram").setLevel(logging.INFO)
 
 # Response settings
-MAX_TOKENS = 240
-TEMPERATURE = 0.65
+MAX_TOKENS = 300
+TEMPERATURE = 0.8
 
 gemini_runtime = {
     "active_model": GEMINI_MODEL,
@@ -2059,11 +2059,11 @@ async def get_delulu_response(
     tone_instruction = TONE_STYLES.get(user_tone, TONE_STYLES["default"])
     emoji_level = memory.get("emoji_level", "default")
     if emoji_level == "none":
-        emoji_instruction = "Do NOT use any emojis in your reply."
+        emoji_instruction = "No emojis."
     elif emoji_level == "high":
-        emoji_instruction = "You may use 1-3 emojis per reply for extra expression."
+        emoji_instruction = "You can use emojis freely if it fits."
     else:
-        emoji_instruction = "Use 0 to 1 emoji per message at most."
+        emoji_instruction = "Use emojis naturally, don't force them."
 
     user_lang_style = memory.get("lang_style", "manglish")
 
@@ -2077,9 +2077,9 @@ async def get_delulu_response(
         f"{rag_instruction} "
         f"{staleness_instruction} "
         f"{random_dialogue} "
-        f"\n--- USER PREFERENCE: TONE ---\n{tone_instruction}\n"
-        f"--- USER PREFERENCE: EMOJIS ---\n{emoji_instruction}\n"
-        f"--- USER PREFERENCE: LANGUAGE STYLE ---\n{LANG_STYLES.get(user_lang_style, LANG_STYLES['manglish'])}\n"
+        f"\nTone: {tone_instruction}\n"
+        f"Emojis: {emoji_instruction}\n"
+        f"Language style: {LANG_STYLES.get(user_lang_style, LANG_STYLES['manglish'])}\n"
         "Vary your response length naturally — sometimes one word, sometimes a few sentences. "
         "React emotionally first. "
         "Don't bring up past memories unless user asks. "
