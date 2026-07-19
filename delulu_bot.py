@@ -3497,23 +3497,58 @@ def run_startup_checks():
 # ═══════════════════════════════════════════════════
 
 _bot_alive = False
+_application: Application | None = None
+_loop: asyncio.AbstractEventLoop | None = None
 
-class _HealthHandler(BaseHTTPRequestHandler):
-    def _respond(self, body=b"OK"):
-        self.send_response(200)
-        self.end_headers()
-        if self.command == "GET":
-            self.wfile.write(body)
+
+class _WebhookHandler(BaseHTTPRequestHandler):
+    """Handles both healthcheck (GET) and Telegram updates (POST)."""
+
     def do_GET(self):
         if self.path == "/dbg":
-            self._respond(_test_apis().encode())
+            body = _test_apis().encode()
         else:
             body = b"OK" if _bot_alive else b"STARTING"
-            self._respond(body)
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(body)
+
     def do_HEAD(self):
-        self._respond()
+        self.send_response(200)
+        self.end_headers()
+
+    def do_POST(self):
+        length = int(self.headers.get("Content-Length", 0))
+        raw = self.rfile.read(length)
+        if self.path != f"/{TELEGRAM_TOKEN}":
+            self.send_response(404)
+            self.end_headers()
+            return
+        try:
+            data = json.loads(raw)
+            if _loop and _application:
+                asyncio.run_coroutine_threadsafe(
+                    _process_webhook_update(data), _loop
+                )
+            self.send_response(200)
+        except Exception:
+            self.send_response(400)
+        self.end_headers()
+
     def log_message(self, *a):
         pass
+
+
+async def _process_webhook_update(data: dict):
+    """Process a Telegram update received via webhook."""
+    global _last_error
+    try:
+        from telegram import Update
+        update = Update.de_json(data, _application.bot)
+        await _application.process_update(update)
+    except Exception as e:
+        _last_error = f"{type(e).__name__}: {e}"
+        logger.error(f"Webhook update error: {_last_error}", exc_info=True)
 
 
 def _test_apis() -> str:
@@ -3557,26 +3592,18 @@ def _test_apis() -> str:
     return json.dumps(results, indent=2)
 
 
-def start_healthcheck():
-    server = HTTPServer(("0.0.0.0", PORT), _HealthHandler)
+def main():
+    """Start Delulu in webhook mode with auto-restart on crash."""
+    import time as _time
+
+    server = HTTPServer(("0.0.0.0", PORT), _WebhookHandler)
     t = threading.Thread(target=server.serve_forever, daemon=True)
     t.start()
-    logger.info(f"Healthcheck listening on port {PORT}")
-
-
-# ═══════════════════════════════════════════════════
-# MAIN — RUN THE BOT
-# ═══════════════════════════════════════════════════
-
-
-def main():
-    """Start Delulu with auto-restart on crash."""
-    import time as _time
-    start_healthcheck()
+    logger.info(f"Webhook/healthcheck server on port {PORT}")
 
     while True:
         try:
-            _run_bot()
+            _run_bot_webhook()
         except BaseException as e:
             global _last_error
             _last_error = f"{type(e).__name__}: {e}"
@@ -3585,9 +3612,9 @@ def main():
             _time.sleep(5)
 
 
-def _run_bot():
-    """Internal: start bot polling once."""
-    global _bot_alive
+def _run_bot_webhook():
+    """Start bot in webhook mode."""
+    global _bot_alive, _application, _loop
 
     if not run_startup_checks():
         print("\nStartup checks failed - will retry in 30s")
@@ -3596,17 +3623,15 @@ def _run_bot():
         return
 
     app = Application.builder().token(TELEGRAM_TOKEN).build()
+    _application = app
 
-    # Commands
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("companion", companion_help))
     app.add_handler(CommandHandler("remember", remember_fact))
     app.add_handler(CommandHandler("aboutme", about_me))
     app.add_handler(CommandHandler("ask", ask_delulu))
     app.add_handler(CommandHandler("mood", mood_reading))
-    app.add_handler(
-        CommandHandler("friendship", friendship_level)
-    )
+    app.add_handler(CommandHandler("friendship", friendship_level))
     app.add_handler(CommandHandler("music", music_talk))
     app.add_handler(CommandHandler("sing", sing_song))
     app.add_handler(CommandHandler("random", random_thought))
@@ -3616,9 +3641,7 @@ def _run_bot():
     app.add_handler(CommandHandler("ragsearch", rag_search))
     app.add_handler(CommandHandler("ragreload", rag_reload))
     app.add_handler(CommandHandler("forget", forget_fact))
-    app.add_handler(
-        CommandHandler("clearhistory", clear_history)
-    )
+    app.add_handler(CommandHandler("clearhistory", clear_history))
     app.add_handler(CommandHandler("tone", tone_command))
     app.add_handler(CommandHandler("voicelang", voicelang_command))
     app.add_handler(CommandHandler("emoji", emoji_command))
@@ -3626,40 +3649,50 @@ def _run_bot():
     app.add_handler(CommandHandler("ping", ping_command))
     app.add_handler(CommandHandler("langstyle", langstyle_command))
 
-    # Message handlers
-    app.add_handler(
-        MessageHandler(
-            filters.TEXT & ~filters.COMMAND,
-            handle_message,
-        )
-    )
-    app.add_handler(
-        MessageHandler(filters.VOICE, handle_voice)
-    )
-    app.add_handler(
-        MessageHandler(filters.AUDIO, handle_audio)
-    )
-    app.add_handler(
-        MessageHandler(filters.PHOTO, handle_photo)
-    )
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    app.add_handler(MessageHandler(filters.VOICE, handle_voice))
+    app.add_handler(MessageHandler(filters.AUDIO, handle_audio))
+    app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
 
-    # Error handler
     app.add_error_handler(error_handler)
 
-    _bot_alive = True
+    hostname = os.environ.get("RENDER_EXTERNAL_HOSTNAME", "")
 
-    print()
-    print("Delulu is AUTHENTIC... her human side!")
-    print("Companion mode: ACTIVATED")
-    print("Cost: 0 -- FREE (Groq + Jina + Gemini)")
-    print("Ready to make new friends")
-    print()
-    print("Bot is running...")
-    print("Press Ctrl+C to stop")
-    print()
+    async def run():
+        global _loop
+        _loop = asyncio.get_event_loop()
+        await app.initialize()
+        await app.start()
+
+        if hostname:
+            wh_url = f"https://{hostname}/{TELEGRAM_TOKEN}"
+            try:
+                import requests as _req
+                r = _req.post(
+                    f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/setWebhook",
+                    json={"url": wh_url, "drop_pending_updates": True},
+                    timeout=15,
+                )
+                logger.info(f"Webhook set: {r.json()}")
+            except Exception as e:
+                logger.warning(f"Webhook setup failed: {e}")
+
+        global _bot_alive
+        _bot_alive = True
+
+        print()
+        print("Delulu is AUTHENTIC... her human side!")
+        print("Companion mode: ACTIVATED")
+        print("Webhook mode")
+        print("Bot is running...")
+        print("Press Ctrl+C to stop")
+        print()
+
+        while True:
+            await asyncio.sleep(3600)
 
     try:
-        app.run_polling(allowed_updates=Update.ALL_TYPES)
+        asyncio.run(run())
     finally:
         _bot_alive = False
         _last_error = None
