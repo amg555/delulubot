@@ -596,6 +596,10 @@ _Ghost life._
 /ragreload - Reload RAG docs
 """
     await update.message.reply_text(welcome, parse_mode="Markdown")
+    memory["conversation_history"].append({"role": "assistant", "content": "Heyyy... New phone-mate! Delulu here."})
+    if len(memory["conversation_history"]) > 50:
+        memory["conversation_history"] = memory["conversation_history"][-50:]
+    save_memories(user_memories)
 
 
 async def companion_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

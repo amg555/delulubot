@@ -9,15 +9,24 @@ def detect_emotion(text: str) -> str:
     if not t:
         return "neutral"
 
-    joy = {"happy", "glad", "great", "awesome", "wonderful", "amazing", "love", "beautiful", "fantastic"}
-    sadness = {"sad", "cry", "crying", "depressed", "lonely", "miss", "heartbroken", "hurt", "pain", "alone"}
-    anger = {"angry", "furious", "mad", "annoyed", "frustrated", "irritated", "pissed"}
-    fear = {"scared", "afraid", "nervous", "worried", "anxious", "panic", "terrified", "fear"}
-    love = {"love", "crush", "romantic", "flirt", "date", "boyfriend", "girlfriend", "propose", "miss you"}
-    dreaming = {"dream", "goal", "wish", "aspire", "future", "ambition", "hope", "imagine"}
-    music = {"music", "song", "sing", "melody", "lyrics", "tune", "playlist", "guitar", "piano"}
-    gratitude = {"thank", "thanks", "grateful", "blessed", "appreciate"}
-    sleepy = {"sleep", "tired", "exhausted", "bored", "lazy", "nap", "rest"}
+    joy = {"happy", "glad", "great", "awesome", "wonderful", "amazing", "love", "beautiful", "fantastic",
+           "santhosham", "santhosha", "sukham", "kushi", "valare", "super"}
+    sadness = {"sad", "cry", "crying", "depressed", "lonely", "miss", "heartbroken", "hurt", "pain", "alone",
+               "dukham", "vishamam", "vishamikk", "karay", "valiya", "prayasham", "saramilla"}
+    anger = {"angry", "furious", "mad", "annoyed", "frustrated", "irritated", "pissed",
+             "deshyam", "deshyama", "krodham", "madakk", "poda", "potte", "venam"}
+    fear = {"scared", "afraid", "nervous", "worried", "anxious", "panic", "terrified", "fear",
+            "pedi", "pedikk", "bhayam", "pathram"}
+    love = {"love", "crush", "romantic", "flirt", "date", "boyfriend", "girlfriend", "propose", "miss you",
+            "pretham", "ishtam", "kamuka", "kadal"}
+    dreaming = {"dream", "goal", "wish", "aspire", "future", "ambition", "hope", "imagine",
+                "swapnam", "lakshyam", "aagraham", "kanaavu"}
+    music = {"music", "song", "sing", "melody", "lyrics", "tune", "playlist", "guitar", "piano",
+             "paattu", "ganam", "sangeetham", "raagam"}
+    gratitude = {"thank", "thanks", "grateful", "blessed", "appreciate",
+                 "nanni", "valare upakaaram", "thanks macha"}
+    sleepy = {"sleep", "tired", "exhausted", "bored", "lazy", "nap", "rest",
+              "urang", "kshinikk", "maduthu", "bore adich"}
 
     words = set(t.split())
     if words & joy:
