@@ -60,7 +60,7 @@ def build_emotion_context(emotion: str) -> str:
         "scared": "Be real and grounded.",
         "dreaming": "Encourage casually.",
         "music": "Talk music like a friend would.",
-        "neutral": "Just talk normal. No need to over-engage.",
+        "neutral": "Just talk normal and natural — engage if they're engaging.",
     }
     return contexts.get(emotion, contexts["neutral"])
 
