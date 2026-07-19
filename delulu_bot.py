@@ -3601,6 +3601,22 @@ def main():
     t.start()
     logger.info(f"Webhook/healthcheck server on port {PORT}")
 
+    hostname = os.environ.get("RENDER_EXTERNAL_HOSTNAME", "")
+    if hostname:
+
+        def _keepalive():
+            url = f"https://{hostname}/"
+            while True:
+                import time as _ktime
+                _ktime.sleep(840)
+                try:
+                    requests.get(url, timeout=30)
+                except Exception:
+                    pass
+
+        threading.Thread(target=_keepalive, daemon=True).start()
+        logger.info("Self-keepalive started (every 14 min)")
+
     while True:
         try:
             _run_bot_webhook()
