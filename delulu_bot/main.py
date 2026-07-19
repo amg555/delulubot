@@ -2,26 +2,11 @@ from __future__ import annotations
 
 import asyncio
 import os
-import sys
 
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 
-from .config import (
-    TELEGRAM_TOKEN,
-    TIMEOUT_SECONDS,
-    VOICE_INPUT_ENABLED,
-    VOICE_OUTPUT_ENABLED,
-    VOICE_TRANSCRIBE_MODEL,
-    VOICE_WHISPER_COMPUTE_TYPE,
-    CHARACTER_BIBLE_FILE,
-    GTTS_AVAILABLE,
-    _bot_alive,
-    _application,
-    _loop,
-    _last_error,
-    logger,
-)
+from . import config
 from .api_clients import groq_client, jina_clients, check_gemini_api
 from .handlers import (
     start,
@@ -53,8 +38,8 @@ from .handlers import (
     handle_photo,
     error_handler,
 )
-from .prompts import refresh_character_bible, DELULU_CHARACTER_BIBLE
-from .rag import rag_state, reload_rag
+from .prompts import DELULU_CHARACTER_BIBLE
+from .rag import rag_state
 from .voice import get_tts_engine
 from .webhook_server import start_webhook_server
 
@@ -64,11 +49,11 @@ def run_startup_checks() -> bool:
     print("DELULU BOT STARTUP")
     print("=" * 50)
 
-    if not TELEGRAM_TOKEN:
+    if not config.TELEGRAM_TOKEN:
         print("FATAL: TELEGRAM_TOKEN not set")
         return False
 
-    print(f"OK: TELEGRAM_TOKEN: {'set' if TELEGRAM_TOKEN else 'Not set'}")
+    print(f"OK: TELEGRAM_TOKEN: {'set' if config.TELEGRAM_TOKEN else 'Not set'}")
     print(f"OK: GROQ_API_KEY: {'set' if os.getenv('GROQ_API_KEY') else 'Not set'}")
     print(f"OK: GEMINI_API_KEY: {'set' if os.getenv('GEMINI_API_KEY') else 'Not set'}")
 
@@ -78,11 +63,11 @@ def run_startup_checks() -> bool:
 
     bible_loaded = bool(DELULU_CHARACTER_BIBLE)
     if bible_loaded:
-        print(f"OK: Character Bible: Loaded from {CHARACTER_BIBLE_FILE}")
+        print(f"OK: Character Bible: Loaded from {config.CHARACTER_BIBLE_FILE}")
     else:
-        print(f"WARN: Character Bible missing: {CHARACTER_BIBLE_FILE}")
+        print(f"WARN: Character Bible missing: {config.CHARACTER_BIBLE_FILE}")
 
-    if VOICE_INPUT_ENABLED:
+    if config.VOICE_INPUT_ENABLED:
         if groq_client:
             print("OK: Voice input: Ready (Groq Whisper API)")
         else:
@@ -90,7 +75,7 @@ def run_startup_checks() -> bool:
     else:
         print("INFO: Voice input: Disabled")
 
-    if VOICE_OUTPUT_ENABLED:
+    if config.VOICE_OUTPUT_ENABLED:
         engine = get_tts_engine()
         if engine != "none":
             print(f"OK: Voice output: Ready ({engine}-tts)")
@@ -110,16 +95,14 @@ def run_startup_checks() -> bool:
 
 def _run_bot_webhook():
     """Start bot in webhook mode."""
-    global _bot_alive, _application, _loop
-
     if not run_startup_checks():
         print("\nStartup checks failed - will retry in 30s")
         import time as _time
         _time.sleep(30)
         return
 
-    app = Application.builder().token(TELEGRAM_TOKEN).build()
-    _application = app
+    app = Application.builder().token(config.TELEGRAM_TOKEN).build()
+    config._application = app
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("companion", companion_help))
@@ -153,26 +136,24 @@ def _run_bot_webhook():
     hostname = os.environ.get("RENDER_EXTERNAL_HOSTNAME", "")
 
     async def run():
-        global _loop
-        _loop = asyncio.get_event_loop()
+        config._loop = asyncio.get_event_loop()
         await app.initialize()
         await app.start()
 
         if hostname:
-            wh_url = f"https://{hostname}/{TELEGRAM_TOKEN}"
+            wh_url = f"https://{hostname}/{config.TELEGRAM_TOKEN}"
             try:
                 import requests as _req
                 r = _req.post(
-                    f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/setWebhook",
+                    f"https://api.telegram.org/bot{config.TELEGRAM_TOKEN}/setWebhook",
                     json={"url": wh_url, "drop_pending_updates": True},
                     timeout=15,
                 )
-                logger.info(f"Webhook set: {r.json()}")
+                config.logger.info(f"Webhook set: {r.json()}")
             except Exception as e:
-                logger.warning(f"Webhook setup failed: {e}")
+                config.logger.warning(f"Webhook setup failed: {e}")
 
-        global _bot_alive
-        _bot_alive = True
+        config._bot_alive = True
 
         print()
         print("Delulu is AUTHENTIC... her human side!")
@@ -187,8 +168,7 @@ def _run_bot_webhook():
     try:
         asyncio.run(run())
     finally:
-        _bot_alive = False
-        _last_error = None
+        config._bot_alive = False
 
 
 def main():
@@ -201,10 +181,9 @@ def main():
         try:
             _run_bot_webhook()
         except BaseException as e:
-            global _last_error
-            _last_error = f"{type(e).__name__}: {e}"
-            logger.error(f"Bot crashed: {_last_error}", exc_info=True)
-            logger.info("Restarting in 5 seconds...")
+            config._last_error = f"{type(e).__name__}: {e}"
+            config.logger.error(f"Bot crashed: {config._last_error}", exc_info=True)
+            config.logger.info("Restarting in 5 seconds...")
             _time.sleep(5)
 
 

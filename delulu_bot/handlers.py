@@ -44,7 +44,6 @@ from .config import (
     VOICE_MAX_DURATION_SECONDS,
     VOICE_OUTPUT_ENABLED,
     VOICE_REPLY_WITH_TEXT,
-    _last_error,
     logger,
 )
 from .context import (
@@ -375,7 +374,6 @@ async def get_delulu_response(user_id: str, user_message: str) -> str:
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle incoming text messages."""
-    global _last_error
     user = update.effective_user
     user_id = str(user.id)
     user_message = update.message.text if update.message else ""
