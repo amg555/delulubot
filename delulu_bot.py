@@ -34,12 +34,7 @@ import requests
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
-try:
-    from faster_whisper import WhisperModel
-    WHISPER_AVAILABLE = True
-except ImportError:
-    WhisperModel = None
-    WHISPER_AVAILABLE = False
+WHISPER_AVAILABLE = True  # Groq Whisper API (no local model needed)
 
 try:
     from gtts import gTTS
@@ -553,43 +548,21 @@ def quota_backoff_message(wait_seconds: int) -> str:
     )
 
 
-_whisper_model = None
-
-
-def get_whisper_model():
-    """Lazy-load whisper model for STT."""
-    global _whisper_model
-    if not WHISPER_AVAILABLE:
-        raise RuntimeError("faster-whisper is not installed")
-    if _whisper_model is None:
-        _whisper_model = WhisperModel(
-            VOICE_TRANSCRIBE_MODEL,
-            compute_type=VOICE_WHISPER_COMPUTE_TYPE,
-        )
-    return _whisper_model
-
-
-def transcribe_voice_file_local(audio_path: str) -> str:
-    """Transcribe an audio file to text."""
-    model = get_whisper_model()
-    segments, _ = model.transcribe(
-        audio_path,
-        beam_size=4,
-        vad_filter=True,
-    )
-    text = " ".join(
-        (seg.text or "").strip() for seg in segments
-    ).strip()
-    return text
-
-
 async def transcribe_voice_file(audio_path: str) -> str:
+    """Transcribe an audio file using Groq's Whisper API (free, no local model)."""
+    if not groq_client:
+        raise RuntimeError("Groq client not available for transcription")
+
+    def _transcribe():
+        with open(audio_path, "rb") as f:
+            response = groq_client.audio.transcriptions.create(
+                model="whisper-large-v3",
+                file=f,
+            )
+        return (response.text or "").strip()
+
     loop = asyncio.get_running_loop()
-    return await loop.run_in_executor(
-        None,
-        transcribe_voice_file_local,
-        audio_path,
-    )
+    return await loop.run_in_executor(None, _transcribe)
 
 
 def synthesize_tts_mp3_local(text: str, out_path: str, lang: str = "en"):
@@ -2879,7 +2852,7 @@ async def status_check(
         f"Character Bible: {'Loaded' if DELULU_CHARACTER_BIBLE else 'Missing'}\n"
         f"Character Guard: {'ON' if CHARACTER_GUARD_ENABLED else 'OFF'}\n"
         f"Voice input: {'ON' if VOICE_INPUT_ENABLED else 'OFF'} "
-        f"({'ready' if WHISPER_AVAILABLE else 'install faster-whisper'})\n"
+        f"({'ready' if WHISPER_AVAILABLE else 'n/a'})\n"
         f"Voice output: {'ON' if VOICE_OUTPUT_ENABLED else 'OFF'} "
         f"(engine: {tts_engine})\n"
         f"Companion mode: {'ON' if COMPANION_ALWAYS_ON else 'OFF'}\n"
@@ -3069,7 +3042,7 @@ async def handle_voice(
 
     if not WHISPER_AVAILABLE:
         await update.message.reply_text(
-            "Voice transcription dependency missing (`faster-whisper`)."
+            "Voice transcription API unavailable."
         )
         return
 
@@ -3188,7 +3161,7 @@ async def handle_audio(
 
     if not WHISPER_AVAILABLE:
         await update.message.reply_text(
-            "Audio transcription dependency missing (`faster-whisper`)."
+            "Audio transcription API unavailable."
         )
         return
 
@@ -3460,10 +3433,10 @@ def run_startup_checks():
         print(f"WARN: Character Bible missing: {CHARACTER_BIBLE_FILE}")
 
     if VOICE_INPUT_ENABLED:
-        if WHISPER_AVAILABLE:
-            print("OK: Voice input: Ready (faster-whisper)")
+        if WHISPER_AVAILABLE and groq_client:
+            print("OK: Voice input: Ready (Groq Whisper API)")
         else:
-            print("WARN: Voice input enabled but faster-whisper is missing")
+            print("WARN: Voice input enabled but Groq client not available")
     else:
         print("INFO: Voice input: Disabled")
 
