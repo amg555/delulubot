@@ -269,11 +269,18 @@ async def get_delulu_response(user_id: str, user_message: str) -> str:
         emoji_instruction = "Use emojis naturally, don't force them."
     user_lang_style = memory.get("lang_style", "manglish")
 
+    fresh_start = memory.get("fresh_start", False)
+    fresh_ctx = ""
+    if fresh_start:
+        fresh_ctx = "You just introduced yourself. Continue naturally from your intro. "
+        memory["fresh_start"] = False
+
     dynamic_instruction = build_system_instruction() + "\n\n=== CURRENT CONVERSATION CONTEXT ===\n"
     dynamic_instruction += (
         f"emotion={emotion}. {emotion_ctx} {friendship_ctx} "
         f"user_name={user_name}. "
         f"messages_so_far={memory['total_messages']}. "
+        f"{fresh_ctx}"
         f"{companion_instruction} "
         f"{song_instruction} "
         f"{rag_instruction} "
@@ -387,6 +394,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     if user.first_name:
         memory["name"] = user.first_name
 
+    await context.bot.send_chat_action(chat_id=chat_id, action="typing")
     response = await get_delulu_response(user_id, user_message)
 
     if VOICE_OUTPUT_ENABLED and voice_enabled and get_tts_engine() != "none":
@@ -550,6 +558,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if user.first_name:
         memory["name"] = user.first_name
     save_memories(user_memories)
+    memory["fresh_start"] = True
     name = user.first_name or "eda/edi"
     welcome = f"""
 *Heyyy...*
@@ -596,10 +605,6 @@ _Ghost life._
 /ragreload - Reload RAG docs
 """
     await update.message.reply_text(welcome, parse_mode="Markdown")
-    memory["conversation_history"].append({"role": "assistant", "content": "Heyyy... New phone-mate! Delulu here."})
-    if len(memory["conversation_history"]) > 50:
-        memory["conversation_history"] = memory["conversation_history"][-50:]
-    save_memories(user_memories)
 
 
 async def companion_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
